@@ -1,4 +1,20 @@
 /************ PART 1 PARTITION TABLE ************/
+
+/*
+Contents of virtual disk: 
+
+Device     Boot Start   End Sectors  Size Id Type
+vdisk1             18   359     342  171K  7 HPFS/NTFS/exFAT
+vdisk2            360   719     360  180K 83 Linux
+vdisk3            720  1439     720  360K  c W95 FAT32 (LBA)
+vdisk4           1440  2879    1440  720K  5 Extended
+vdisk5           1458  1799     342  171K  6 FAT16
+vdisk6           1818  2339     522  261K 82 Linux swap / Solaris
+vdisk7           2358  2879     522  261K 83 Linux
+
+*/
+
+
 #include <stdio.h>
 #include <fcntl.h> // needed for file descriptor
 #define EXTEND_TYPE 5
