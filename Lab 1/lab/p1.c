@@ -1,3 +1,15 @@
+/*
+Contents of vdisk:
+Device     Boot Start   End Sectors  Size Id Type
+vdisk1             18   359     342  171K  7 HPFS/NTFS/exFAT
+vdisk2            360   719     360  180K 83 Linux
+vdisk3            720  1439     720  360K  c W95 FAT32 (LBA)
+vdisk4           1440  2879    1440  720K  5 Extended
+vdisk5           1458  1799     342  171K  6 FAT16
+vdisk6           1818  2339     522  261K 82 Linux swap / Solaris
+vdisk7           2358  2879     522  261K 83 Linux
+*/
+
 /**************PART 1 PARTITION TABLE*********************/
 #include <stdio.h>
 #include <fcntl.h> // needed for file descriptor
@@ -43,7 +55,8 @@ int main(int argc, char *argv[ ], char *env[ ])
     {
         
         // regular case
-        printf("vdisk%d  %d   (%d, %d)  %x\n", i, p->start_sector, ((p->start_sector + p->nr_sectors) - 1), p->nr_sectors, p->sys_type);
+        int end_sectors = (p->start_sector + p->nr_sectors) - 1;
+        printf("vdisk%d  %d   (%d, %d)  %x\n", i, p->start_sector, end_sectors, p->nr_sectors, p->sys_type);
         
         // case we've reached the EXTEND PARTITION
         if(p->sys_type == EXTEND_TYPE)
