@@ -633,10 +633,10 @@ int saveHelper(NODE *pCur)
         if(strcmp(pCur->name, "/") != 0) {
             cwd = pCur;
             pwd(); // build up CWD
-            fprintf(fp, "%c,%s,\n", pCur->type, CWD);
+            fprintf(fp, "%c\t%s,\n", pCur->type, CWD);
         } else {
             // print root
-            fprintf(fp, "%c,%s\n", pCur->type, pCur->name);
+            fprintf(fp, "%c\t%s\n", pCur->type, pCur->name);
         }
         saveHelper(pCur->child);
         if(strcmp(pCur->name, "/") != 0) {
