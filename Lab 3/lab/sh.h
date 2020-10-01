@@ -17,3 +17,6 @@ char *tail[64];
 char *file;
 
 int tokenize(char *input);
+int check_file_redirect(char *env[]);
+int check_pipe();
+int run_prompt(char *env[]);
