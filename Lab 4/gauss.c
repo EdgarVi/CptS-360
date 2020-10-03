@@ -69,37 +69,52 @@ int main(int argc, char *argv[])
   pthread_t threads[N];
  
   printf("main: initialize matrix A[N][N+1] as [A|B]\n"); 
-  for (i=0; i<N; i++)
-    for (j=0; j<N; j++)
-        A[i][j] = 1.0;
-  for (i=0; i<N; i++)
-      A[i][N-i-1] = 1.0*N;
-  for (i=0; i<N; i++){
-      A[i][N] = (N*(N+1))/2 + (N-i)*(N - 1);
-  }
-  print_matrix();  // show initial matrix [A|B]
 
-  pthread_barrier_init(&barrier, NULL, N); // set up barrier
+    for (i=0; i<N; i++) {
+        for (j=0; j<N; j++) {
+            A[i][j] = 1.0;
+        }
+    }
+    
+    for (i=0; i<N; i++){
+        A[i][N-i-1] = 1.0*N;
+    }
+  
+    for (i=0; i<N; i++){
+        A[i][N] = (N*(N+1))/2 + (N-i)*(N - 1);
+    }
 
-  printf("main: create N=%d working threads\n", N);
-  for (i=0; i<N; i++){
-     pthread_create(&threads[i], NULL, ge, (void *)i);
-  }
-  printf("main: wait for all %d working threads to join\n", N);
-  for (i=0; i<N; i++){
-       pthread_join(threads[i], NULL);
-  }
-  printf("main: back substitution : ");
-  for (i=N-1; i>=0; i--){
-      sum = 0.0;
-      for (j=i+1; j<N; j++)
-          sum += A[i][j]*A[j][N];
-      A[i][N] = (A[i][N]- sum)/A[i][i];
-  }
-  // print solution
-  printf("The solution is :\n");
-  for(i=0; i<N; i++){
-	printf("%6.2f  ", A[i][N]);
-  }
-  printf("\n");
+    print_matrix();  // show initial matrix [A|B]
+
+    pthread_barrier_init(&barrier, NULL, N); // set up barrier
+
+    printf("main: create N=%d working threads\n", N);
+
+    for (i=0; i<N; i++){
+        pthread_create(&threads[i], NULL, ge, (void *)i);
+    }
+    
+    printf("main: wait for all %d working threads to join\n", N);
+    
+    for (i=0; i<N; i++){
+        pthread_join(threads[i], NULL);
+    }
+    
+    printf("main: back substitution : ");
+    
+    for (i=N-1; i>=0; i--){
+        sum = 0.0;
+        for (j=i+1; j<N; j++)
+            sum += A[i][j]*A[j][N];
+        A[i][N] = (A[i][N]- sum)/A[i][i];
+    }
+    
+    // print solution
+    printf("The solution is :\n");
+    
+    for(i=0; i<N; i++){
+        printf("%6.2f  ", A[i][N]);
+    }
+    
+    printf("\n");
 }
