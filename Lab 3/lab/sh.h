@@ -1,3 +1,6 @@
+#ifndef SH_H
+#define SH_H
+
 #include <stdio.h>
 #include <libgen.h>
 #include <string.h>
@@ -20,3 +23,5 @@ int tokenize(char *input);
 int check_file_redirect(char *env[]);
 int check_pipe();
 int run_prompt(char *env[]);
+
+#endif

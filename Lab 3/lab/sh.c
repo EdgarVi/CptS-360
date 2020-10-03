@@ -106,13 +106,13 @@ int check_pipe(){
                 close(pd[0]);
                 close(pd[1]);
                 dup(pd[1]);
-                exec(head);
+                //exec(head);
             } else {
                 close(pd[1]);
                 close(0);
                 dup(pd[0]);
                 close(pd[0]);
-                exec(tail);
+                //exec(tail);
             }
         }
         i++;
@@ -156,7 +156,7 @@ int run_prompt(char *env[])
 
     printf("cmd = %s\n", cmd); // show file to be executed
 
-    check_file_redirect(env);
+    //check_file_redirect(env);
 
 
     int pid, status; 
@@ -172,8 +172,11 @@ int run_prompt(char *env[])
         exit(100);
     }
 
-    check_pipe();
+    //check_pipe();
 
     int r = execve(cmd, myargv, env); // t.c terminates
     printf("execve() failed, r = %d", r); // execve failed
+
+
+    return r;
 }
