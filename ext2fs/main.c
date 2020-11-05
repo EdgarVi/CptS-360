@@ -39,6 +39,10 @@ void fs_init() {
 
 }
 
+// mount the root file system
+void mount_root() {
+    root = iget(dev, 2);
+}
 
 int main(int argc, char * argv[]) {
 
@@ -79,6 +83,33 @@ int main(int argc, char * argv[]) {
 
     // initialize FS data structure
     fs_init();
+
+
+    // mount the root file system
+    mount_root();
+
+
+    printf("Setting P0 as running proc\n");
+    running = &proc[0];
+    running->status = READY;
+    running->cwd = iget(dev, 2);
+
+    printf("root refCount = %d\n", root->refCount);
+
+    // ask for command line args
+    while(1) {
+        printf("input command: ");
+        fgets(line, 128, stdin);
+        line[strlen(line) - 1] = 0;
+
+        if(line[0] == 0)
+            continue;
+
+        sscanf(line, "%s %s %s", command, pathname, newpath);
+
+        if(!strcmp(command, "quit"))
+            //quit(rootdev);
+    }
 
     return 0;
 }
