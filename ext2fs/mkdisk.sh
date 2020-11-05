@@ -1,3 +1,4 @@
+rm diskimage
 dd if=/dev/zero of=diskimage bs=1024 count=1440
 mke2fs -b 1024 diskimage 1440
 

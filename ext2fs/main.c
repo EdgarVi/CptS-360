@@ -118,6 +118,15 @@ int main(int argc, char * argv[]) {
 
         sscanf(line, "%s %s %s", command, pathname, newpath);
 
+        if(!strcmp(command, "ls"))    
+            ls(pathname);
+        
+        if(!strcmp(command, "cd"))
+            chdir(pathname);
+
+        if(!strcmp(command, "pwd"))
+            rpwd(running->cwd);
+            
         if(!strcmp(command, "quit"))
             quit(rootdev);
     }
