@@ -1,4 +1,4 @@
-#include "global.c"
+#include "util.c"
 
 char * rootdev = "mydisk"; // default root device if none given
 
@@ -108,7 +108,7 @@ int main(int argc, char * argv[]) {
         sscanf(line, "%s %s %s", command, pathname, newpath);
 
         if(!strcmp(command, "quit"))
-            //quit(rootdev);
+            quit(rootdev);
     }
 
     return 0;
