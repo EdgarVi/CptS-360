@@ -559,39 +559,6 @@ int child_count(MINODE *pmip){
     return count;
 }
 
-// prints opened file descriptors
-int my_pfd() {
-    int i;
-    printf("Filename\tFD\tmode\toffset\n");
-    for(i = 0; i < 10; i++){
-        if (running->fd[i]!= NULL)
-		{
-			rpwd(running->fd[i]->minodePtr);
-			printf("\t\t%d\t",i);
-			switch(running->fd[i]->mode)
-			{
-				case 0:
-					printf("READ\t");
-					break;
-				case 1:
-					printf("WRITE\t");
-					break;
-				case 2:
-					printf("R/W\t");
-					break;
-				case 3:
-					printf("APPEND\t");
-					break;
-				default:
-					printf("??????\t");//this should never happen
-					break;
-			}
-			printf("%li\n",running->fd[i]->offset);
-		}
-    }
-    return 1;
-}
-
 
 // write all modified minodes to disk
 int quit(char * rootdev) {
