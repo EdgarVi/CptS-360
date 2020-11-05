@@ -4,7 +4,7 @@ char * rootdev = "mydisk"; // default root device if none given
 
 
 // initialize fs data structures
-void fs_init() {
+int fs_init() {
     
     int i, j;
     MINODE * mip;
@@ -40,30 +40,34 @@ void fs_init() {
 }
 
 // mount the root file system
-void mount_root() {
+int mount_root() {
     root = iget(dev, 2);
 }
 
 int main(int argc, char * argv[]) {
 
+    
     int i, ino;
     char buf[BLKSIZE];
 
-    if (argc > 1)
+    if(argc > 1)
         rootdev = argv[1];
 
-
     fd = open(rootdev, O_RDWR);
-    if(fd < 0) {
+    if(fd < 0){
         printf("open %s failed\n", rootdev);
         exit(1);
     }
 
     dev = fd;
 
-    // read SUPER block and verify it's an EXT2 fs
+    // read SUPER block to verify it's an EXT2 FS
+    get_block(dev, 1, buf);
+    sp = (SUPER *)buf;
+
+    // verify it's an EXT2 FS by checking magic number
     if(sp->s_magic != SUPER_MAGIC) {
-        printf("Super magic = %x: %s is not an EXT2 file system\n", sp->s_magic, rootdev);
+        printf("super magic = %x: %s is not an EXT2 file system\n", sp->s_magic, rootdev);
         exit(0);
     }
 
@@ -80,16 +84,23 @@ int main(int argc, char * argv[]) {
     inode_start = gp->bg_inode_table;
     printf("bmap = %d imap = %d inode_start = %d\n", bmap, imap, inode_start);
 
+    // set root mtable fields
+    mp = &mtable[0];
+    mp->bmap = bmap;
+    mp->imap = imap;
+    mp->iblock = inode_start;
+    mp->ninodes = ninodes;
+    mp->nblocks = nblocks;
+    mp->dev = dev;
 
-    // initialize FS data structure
+    // Initialize FS data structure
     fs_init();
-
 
     // mount the root file system
     mount_root();
 
 
-    printf("Setting P0 as running proc\n");
+    printf("creating P0 as running proc\n");
     running = &proc[0];
     running->status = READY;
     running->cwd = iget(dev, 2);

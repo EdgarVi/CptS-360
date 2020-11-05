@@ -562,10 +562,11 @@ int child_count(MINODE *pmip){
 
 // write all modified minodes to disk
 int quit(char * rootdev) {
+
     int i;
     MINODE * mip;
     
-    for(i = i; i < NMINODES; i++) {
+    for(i = 0; i < NMINODES; i++) {
         mip = &minode[i];
         if(mip->refCount > 0){
             iput(mip);

@@ -1,5 +1,6 @@
-rm mydisk
-sudo dd if=/dev/zero of=mydisk bs=1024 count=1440
-sudo mkfs mydisk 1440
-(cd /mnt; sudo rmdir lost+found)
+dd if=/dev/zero of=diskimage bs=1024 count=1440
+mke2fs -b 1024 diskimage 1440
+
+sudo mount diskimage /mnt
+(cd /mnt; rm -r *; mkdir dir1 dir2; mkdir dir1/dir3; touch file1 file2; ls -l)
 sudo umount /mnt
