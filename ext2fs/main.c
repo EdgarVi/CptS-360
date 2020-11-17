@@ -129,6 +129,12 @@ int main(int argc, char * argv[]) {
             
         if(!strcmp(command, "quit"))
             quit(rootdev);
+
+        if(!strcmp(command, "mkdir"))
+            my_mkdir(pathname);
+
+        if(!strcmp(command, "creat"))
+            my_creat(pathname);
     }
 
     return 0;
