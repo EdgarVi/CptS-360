@@ -52,7 +52,7 @@ void showdir(MINODE *mip)
     DIR *dp = (DIR*)buf;
     char *cp = buf;
  
-    for(i = 0; i < 12; ++i)       
+    for(i = 0; i < 12; ++i) // is 12 correct here?  
     {
         if(mip->INODE.i_block[i] == 0)
         {
@@ -79,6 +79,7 @@ void showdir(MINODE *mip)
             char *badctime = ctime(&curmip->INODE.i_mtime);            
             badctime[24] = '\0';
 
+            // print permissions
             printf( (curmip->INODE.i_mode & 0x0100) ? "r" : " -");
             printf( (curmip->INODE.i_mode & 0x0080) ? "w" : "-");
             printf( (curmip->INODE.i_mode & 0x0040) ? "x" : "-");
