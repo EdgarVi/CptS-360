@@ -81,117 +81,15 @@ int enter_name(MINODE *mip, int ino, char *name){
     }
 }
 
-int k_mkdir(MINODE *pmip, char *name)
+int k_mkdir(MINODE *parent_mip, char *name)
 {
-    // allocate inode and disk block
-    int i, ino = ialloc(pmip->dev), blk = balloc(pmip->dev);
-    if(ino == 0){
-        printf("ERROR: Unable to allocate inode\n");
-        return -1;
-    }
-    printf("In k_mkdir\n\tino: %d, blk: %d\n", ino, blk);
-
-    // load MINODE into a minode
-    dev = pmip->dev;
-    MINODE *mip = iget(dev, ino);
-
-    // initialize the minode
-    mip->INODE.i_mode = 0x41ED; // DIR file type
-    mip->INODE.i_uid = running->uid;
-    mip->INODE.i_gid = running->gid;
-    mip->INODE.i_size = BLKSIZE;
-    mip->INODE.i_links_count = 2; // for "." and ".."
-    mip->INODE.i_blocks = BLKSIZE / 512;
-    mip->INODE.i_atime = time(0L);
-    mip->INODE.i_mtime = time(0L);
-    mip->INODE.i_ctime = time(0L);
     
-    // set mip's blocks
-    mip->INODE.i_block[0] = blk;
-    for(i = 1; i < 12; i++){
-        mip->INODE.i_block[i] = 0;
-    }
-
-    
-    mip->ino = ino;
-    mip->dirty = 1;
-    iput(mip); // write inode back to disk
-
-
-    // create data block containing . and ..
-    char buf[BLKSIZE];
-    dp = (DIR *)buf;
-    bzero(buf, BLKSIZE);
-
-    // make . entry in DIR block
-    dp->inode = ino;
-    dp->rec_len = 12;
-    dp->name_len = 1;
-    dp->name[0] = '.';
-
-    // make .. entry in DIR block
-    dp = (char *)dp + 12;
-    dp->inode = pmip->ino; // parent's ino
-    dp->rec_len = BLKSIZE - 12;
-    dp->name_len = 2;
-    dp->name[0] = dp->name[1] = '.';
-
-    put_block(dev, blk, buf); // finally, write to blk on disk
-    
-    enter_name(pmip, ino, name); // create new INODE under pmip
-    pmip->INODE.i_links_count++; // inc parent DIR link count
 }
 
 int my_mkdir(char *pathname)
 {
 
-    int ino, pino, i;
-    char *path, *newdir, *temp;
-
-    // first step is to separate dirname and base
-    path = dirname(pathname); // path to new file
-    newdir = basename(pathname); // name of new file
-    printf("path: %s, newdir: %s\n", path, newdir);
-
-
-    // check if path exists and is actually dir
-    if(pathname[0] == '/'){
-        dev = root->dev; //
-    } else {
-        dev = running->cwd->dev;
-    }
-
-    MINODE *pmip, *mip;
-    pino = getino(dev, path);
-    pmip = iget(dev, pino);
-
-    if(pino == 0){
-        printf("ERROR: Path does not exist\n");
-        return -1;
-    }
-
-    if((pmip->INODE.i_mode & 0x4000) != 0x4000){
-        printf("ERROR: Path not a dir\n");
-        return -1;
-    }
-
-    // check to see if child exists in parent dir
-
-    if(findPath(pathname) == 1){
-        printf("ERROR: Path already exists\n");
-        return -1;
-    }
-
-    // search() returns 0 if nothing is found
-    if(search(pmip, newdir) != 0){
-        printf("ERROR: this dir already exists\n");
-        return -1;
-    } 
-
-
-    // finally call k_mkdir if pass all cases
-    printf("Passed all checks, entering k_mkdir\n");
-    k_mkdir(pmip, newdir);
+    
 }
 
 int k_creat(MINODE *pip, char *name){
