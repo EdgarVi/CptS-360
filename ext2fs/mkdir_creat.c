@@ -89,7 +89,16 @@ int k_mkdir(MINODE *parent_mip, char *name)
 int my_mkdir(char *pathname)
 {
 
-    
+    int i, parent_ino, device = running->cwd->dev;
+    char * path, * newdir, * parent = NULL, * child = NULL;
+    MINODE * parent_mip;
+
+    // separate dirname and base
+    path = dirname(pathname); // path to new file 
+    newdir = basename(pathname); // name of new file
+    printf("path: %s, newdir: %s\n", path, newdir);
+
+    return 0;
 }
 
 int k_creat(MINODE *pip, char *name){
