@@ -10,8 +10,13 @@
 #include <stdbool.h>
 
 
+// Block sizes
 #define BLKSIZE 1024
 #define BBITMAP 3
+#define NUM_DIRECT_BLOCKS 12
+#define NUM_INDIRECT_BLOCKS 12
+#define NUM_DOUBLE_INDIRECT_BLOCKS 13
+#define I_BLOCKS 15
 
 // Block number of EXT2 FS on FD
 #define SUPERBLOCK 1
