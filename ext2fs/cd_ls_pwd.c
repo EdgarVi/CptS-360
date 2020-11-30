@@ -2,15 +2,28 @@
 
 int chdir(char *pathname){
     
-    int ino = getino(dev, pathname);
-    MINODE *mip = iget(dev, ino);     
+    int ino;
+    MINODE *mip, * old_cwd = running->cwd;
 
-    if(dir_or_file(mip) == 1) {
-        iput(running->cwd);
-        running->cwd = mip;
-    } else {
-        printf("ERROR: Not a dir\n");   
+    ino = getino(dev, pathname);
+
+
+    if(ino < 0) {
+        printf("ERROR: File does not exist\n");
+        return - 1;
     }
+
+    mip = iget(dev, ino);
+
+    if(!S_ISDIR(mip->ip.i_mode)) { // if file
+        iput(mip);
+    }
+    
+    iput(old_cwd); // write old cwd back to disk
+
+    running->cwd = mip;
+
+    return 0;
 }
 
 // list stats of DIR and FILE in dir
