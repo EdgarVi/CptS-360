@@ -50,8 +50,10 @@ int main(int argc, char * argv[]) {
     int i, ino;
     char buf[BLKSIZE];
 
-    if(argc > 1)
+    if(argc > 1){
         rootdev = argv[1];
+        printf("Attempting to open: %s\n", rootdev);    
+    }
 
     fd = open(rootdev, O_RDWR);
     if(fd < 0){
