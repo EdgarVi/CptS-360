@@ -9,6 +9,7 @@ int get_block(int fd, int blk, char *buf){
     return read(fd, buf, BLKSIZE); 
 }
 
+// write buffer data to disk
 int put_block(int dev, int blk, char buf[])
 {
 
