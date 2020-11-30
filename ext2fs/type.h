@@ -53,7 +53,7 @@ typedef struct ext2_dir_entry_2 DIR; // Needed for new version of e2fs
 
 // In-memory inodes structure
 typedef struct minode {
-    INODE INODE; // disk inode
+    INODE ip; // disk inode
     int dev, ino;
     int refCount; // use count
     int dirty; // modified flag
