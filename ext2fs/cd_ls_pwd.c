@@ -14,6 +14,7 @@ int chdir(char *pathname){
 }
 
 // list stats of DIR and FILE in dir
+// currently works for only 
 void ls(char *pathname){
     
     int ino, i = 0; 
