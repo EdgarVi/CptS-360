@@ -51,6 +51,9 @@ typedef struct ext2_inode INODE;
 typedef struct ext2_dir_entry_2 DIR; // Needed for new version of e2fs
 
 
+#define SUPER_BLOCK_OFFSET 1
+#define GD_BLOCK_OFFSET 2
+
 // In-memory inodes structure
 typedef struct minode {
     INODE ip; // disk inode
