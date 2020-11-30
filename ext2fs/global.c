@@ -9,7 +9,7 @@ MINODE * root;
 
 // Globals
 int fd;
-int ninodes, nblocks; // ninodes, nblocks from SUPER
+int ninodes, nblocks, block_size, inode_size, inodes_per_block; // ninodes, nblocks from SUPER
 int bmap, imap, iblock; // BMAP, IMAP, inodes from start block numbers
 int dev;
 int inode_start;

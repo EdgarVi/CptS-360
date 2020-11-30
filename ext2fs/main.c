@@ -4,12 +4,15 @@ char * rootdev = "mydisk"; // default root device if none given
 
 
 // initialize fs data structures
-int fs_init() {
+void mount_root(int dev) {
     
+    char buf[BLKSIZE];
+
     int i, j;
     MINODE * mip;
     MTABLE * mtp;
     PROC * p;
+    OFT *ofp;
 
     // initialize all minodes as FREE
     for(i = 0; i < NMINODES; i++) {
@@ -18,31 +21,71 @@ int fs_init() {
         mip->refCount = 0;
         mip->mounted = 0;
         mip->mntPtr = 0;
+        mip->dirty = 0;
     }
 
     // initialize PROCs
     for(i = 0; i < NPROC; i++) {
         p = &proc[i];
         p->pid = i;
+        p->gid = 0;
         p->uid = i;
-        p->cwd = 0;
+        p->cwd = NULL;
+        p->next = NULL;
         p->status = FREE;
         for(j = 0; j < NFD; j++) {
             p->fd[j] = 0; // all FD are NULL
         }
     }
 
-    for(i = 1; i < NMTABLE; i++) {
-        mtp = &mtable[i];
-        mtp->dev = 0;
+    for(i = 1; i < NOFT; i++) {
+        ofp = &oft[i];
+        ofp->mode = 0;
+        ofp->refCount = 0;
+        ofp->minodePtr = NULL;
+        ofp->offset = 0;
+        
     }
 
+
+    // get and record super block
+    sp = (SUPER *) malloc (sizeof(SUPER));
+    get_block(dev, SUPER_BLOCK_OFFSET, (char *) sp);
+
+    // verify it's an EXT2 FS by checking magic number
+    if(sp->s_magic != SUPER_MAGIC) {
+        printf("super magic = %x: %s is not an EXT2 file system\n", sp->s_magic, rootdev);
+        exit(0);
+    }
+
+    ninodes = sp->s_inodes_count;
+    nblocks = sp->s_blocks_count;
+    block_size = 1024 << sp->s_log_block_size;
+    inode_size = sp->s_inode_size;
+
+    // get and record group descriptor block
+    gp = (GD *) malloc(BLKSIZE);
+    get_block(dev, GD_BLOCK_OFFSET, (char *) gp);
+
+    bmap = gp->bg_block_bitmap; // represents free and used blocks in this group
+    imap = gp->bg_inode_bitmap; // represents free and used inodes in this block group 
+    iblock = gp->bg_inode_table; // block id of first block of the inode table in this block group
+    inodes_per_block = block_size / inode_size;
+
+    get_block(dev, bmap, buf);
+
+    root = iget(dev, ROOT_INODE);
+    root->refCount++;
+
+    printf("creating P0 as running proc\n");
+    running = &proc[0];
+    running->status = READY;
+    running->cwd = root;
+
+    printf("root refCount = %d\n", root->refCount);
+
 }
 
-// mount the root file system
-int mount_root() {
-    root = iget(dev, 2);
-}
 
 int main(int argc, char * argv[]) {
 
@@ -63,51 +106,8 @@ int main(int argc, char * argv[]) {
 
     dev = fd;
 
-    // read SUPER block to verify it's an EXT2 FS
-    get_block(dev, 1, buf);
-    sp = (SUPER *)buf;
+    mount_root(dev);
 
-    // verify it's an EXT2 FS by checking magic number
-    if(sp->s_magic != SUPER_MAGIC) {
-        printf("super magic = %x: %s is not an EXT2 file system\n", sp->s_magic, rootdev);
-        exit(0);
-    }
-
-
-    ninodes = sp->s_inodes_count;
-    nblocks = sp->s_blocks_count;
-
-    get_block(dev, 2, buf);
-    gp = (GD *) buf;
-
-    // initialize bitmap
-    bmap = gp->bg_block_bitmap;
-    imap = gp->bg_inode_bitmap;
-    inode_start = gp->bg_inode_table;
-    printf("bmap = %d imap = %d inode_start = %d\n", bmap, imap, inode_start);
-
-    // set root mtable fields
-    mp = &mtable[0];
-    mp->bmap = bmap;
-    mp->imap = imap;
-    mp->iblock = inode_start;
-    mp->ninodes = ninodes;
-    mp->nblocks = nblocks;
-    mp->dev = dev;
-
-    // Initialize FS data structure
-    fs_init();
-
-    // mount the root file system
-    mount_root();
-
-
-    printf("creating P0 as running proc\n");
-    running = &proc[0];
-    running->status = READY;
-    running->cwd = iget(dev, 2);
-
-    printf("root refCount = %d\n", root->refCount);
 
     // ask for command line args
     while(1) {
