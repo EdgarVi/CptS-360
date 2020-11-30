@@ -136,15 +136,15 @@ int balloc(dev){
 int dir_or_file(MINODE *mip){  
   int type = -1;
   
-  if ((mip->INODE.i_mode & 0xF000) == 0x8000) // if (S_ISREG())
+  if ((mip->ip.i_mode & 0xF000) == 0x8000) // if (S_ISREG())
   {
     type = 0;
   }
-  if ((mip->INODE.i_mode & 0xF000) == 0x4000) // if (S_ISDIR())
+  if ((mip->ip.i_mode & 0xF000) == 0x4000) // if (S_ISDIR())
   {
     type = 1;
   }
-  if ((mip->INODE.i_mode & 0xF000) == 0xA000) // if (S_ISLNK())
+  if ((mip->ip.i_mode & 0xF000) == 0xA000) // if (S_ISLNK())
   {
     type = 2;
   }
@@ -211,10 +211,10 @@ int search(MINODE *mip, char *name){
 
     for (i=0; i < 12; i++){         // assume DIR at most 12 direct blocks
 
-      if(mip->INODE.i_block[i] != 0){   //never found the dir name
+      if(mip->ip.i_block[i] != 0){   //never found the dir name
 
         // YOU SHOULD print i_block[i] number here
-        get_block(mip->dev, mip->INODE.i_block[i], sbuf);
+        get_block(mip->dev, mip->ip.i_block[i], sbuf);
 
         dp = (DIR *)sbuf;
         char_p = sbuf;
@@ -246,36 +246,37 @@ MINODE *iget(int dev, int ino)
     int i;
     MINODE *mip;
     char buf[BLKSIZE];
-    int blk, disp;
-    INODE *ip;
+    int blk, offset;
+    INODE *ip, *table;
 
-    for (i=0; i<NMINODES; i++){
-    mip = &minode[i];
-    if (mip->dev == dev && mip->ino == ino){
-        mip->refCount++;
-        //printf("found [%d %d] as minode[%d] in core\n", dev, ino, i);
-        return mip;
-    }
+    for (i=0; i < NMINODES; i++){
+        mip = &minode[i];
+        
+        if (mip->dev == dev && mip->ino == ino){
+            mip->refCount++;
+            return mip;
+        }
     }
 
-    for (i=0; i<NMINODES; i++){
+    for (i = 0; i < NMINODES; i++){
         mip = &minode[i];
         if (mip->refCount == 0){
-            //printf("allocating NEW minode[%d] for [%d %d]\n", i, dev, ino);
+
             mip->refCount = 1;
             mip->dev = dev;
             mip->ino = ino;
+            mip->dirty = 0;
 
             // get INODE of ino to buf    
-            blk  = (ino-1) / 8 + inode_start;
-            disp = (ino-1) % 8;
+            blk  = (ino - 1) / 8 + iblock; // iblock is the inode table block
+            offset = (ino - 1) % 8;
 
-            //printf("iget: ino=%d blk=%d disp=%d\n", ino, blk, disp);
-
+            
             get_block(dev, blk, buf);
-            ip = (INODE *)buf + disp;
+            ip = (INODE *)buf + offset;
+            
             // copy INODE to mp->INODE
-            mip->INODE = *ip;
+            mip->ip = *ip;
 
             return mip;
         }
@@ -309,7 +310,7 @@ int iput(MINODE *mip){
     // get block containing this inode
     get_block(mip->dev, block, buf);
     ip = (INODE *)buf + offset; // ip points at INODE
-    *ip = mip->INODE; // copy INODE to inode in block
+    *ip = mip->ip; // copy INODE to inode in block
     put_block(mip->dev, block, buf); // write back to disk
     midalloc(mip); 
 }
@@ -362,7 +363,7 @@ int getino(int dev, char *pathname){
    }
 
     iput(mip);
-   return ino;
+    return ino;
     
 }
 
@@ -406,9 +407,9 @@ unsigned long idalloc(int dev, int ino)
 int truncate(MINODE *mip)
 {
     deallocInodeBlk(mip);
-    mip->INODE.i_atime = time(0L);
-    mip->INODE.i_mtime = time(0L);
-    mip->INODE.i_size = 0;
+    mip->ip.i_atime = time(0L);
+    mip->ip.i_mtime = time(0L);
+    mip->ip.i_size = 0;
     mip->dirty = 1;
 }
 
@@ -422,10 +423,10 @@ int deallocInodeBlk(MINODE *mip)
 
     for (i = 0; i < 12; i++)
     {
-        if (mip->INODE.i_block[i] != 0)
+        if (mip->ip.i_block[i] != 0)
         {
-            clr_bit(bitmap, mip->INODE.i_block[i]);
-            mip->INODE.i_block[i] = 0;
+            clr_bit(bitmap, mip->ip.i_block[i]);
+            mip->ip.i_block[i] = 0;
         }
 
         else
@@ -435,9 +436,9 @@ int deallocInodeBlk(MINODE *mip)
         }
     }
 
-    if (mip->INODE.i_block[i] != 0)
+    if (mip->ip.i_block[i] != 0)
     {
-        iblk = mip->INODE.i_block[i];
+        iblk = mip->ip.i_block[i];
         get_block(dev, iblk, buf);
         indirect = (int *) buf;
         
@@ -455,7 +456,7 @@ int deallocInodeBlk(MINODE *mip)
                 clr_bit(bitmap, iblk - 1);
                 put_block(dev, iblk, buf);
                 put_block(dev, BBITMAP, bitmap);
-                mip->INODE.i_block[12] = 0;
+                mip->ip.i_block[12] = 0;
                 return;
             }
         }
@@ -464,8 +465,8 @@ int deallocInodeBlk(MINODE *mip)
         return;
     }
 
-    if (mip->INODE.i_block[13] != 0) {
-        dblk = mip->INODE.i_block[13];
+    if (mip->ip.i_block[13] != 0) {
+        dblk = mip->ip.i_block[13];
         get_block(dev, dblk, dbuf);
 
         doubleIndirect = (int *) dbuf;
@@ -486,7 +487,7 @@ int deallocInodeBlk(MINODE *mip)
                     put_block(dev, iblk, buf);
                     put_block(dev, BBITMAP, bitmap);
                     put_block(dev, dblk, dbuf);
-                    mip->INODE.i_block[13] = 0;
+                    mip->ip.i_block[13] = 0;
                     return;
                 }
 
@@ -502,7 +503,7 @@ int deallocInodeBlk(MINODE *mip)
                 put_block(dev, iblk, buf);
                 put_block(dev, BBITMAP, bitmap);
                 put_block(dev, dblk, dbuf);
-                mip->INODE.i_block[13] = 0;
+                mip->ip.i_block[13] = 0;
                 return;
             }
         }
@@ -535,7 +536,7 @@ int bdalloc(int device, int bno){
 int child_count(MINODE *pmip){
     int count = 0,i;
     char sbuf[BLKSIZE], *cp;
-    INODE *ip = &pmip->INODE;
+    INODE *ip = &pmip->ip;
 
      for(i = 0; i < 12;i++){
         
