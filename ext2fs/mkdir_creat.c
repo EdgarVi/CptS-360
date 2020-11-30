@@ -8,7 +8,7 @@ int enter_name(MINODE *mip, int ino, char *name){
 
     int i, ideal_length, need_length, remain;
     char *cp, sbuf[BLKSIZE], temp[256];
-    INODE *ip = &mip->INODE;
+    INODE *ip = &mip->ip;
 
     need_length = 4*((8 + strlen(name) + 3)/4);  //rec_len needed for the new DIR entry
 
@@ -64,7 +64,7 @@ int enter_name(MINODE *mip, int ino, char *name){
 
             dp = (DIR *)sbuf;
 
-            mip->INODE.i_size += BLKSIZE;  // increment parent size by 1024  
+            mip->ip.i_size += BLKSIZE;  // increment parent size by 1024  
             
             // dp points to a new empty data block  
             dp->rec_len = BLKSIZE;
@@ -96,7 +96,29 @@ int my_mkdir(char *pathname)
     // separate dirname and base
     path = dirname(pathname); // path to new file 
     newdir = basename(pathname); // name of new file
-    printf("path: %s, newdir: %s\n", path, newdir);
+    printf("pathname: %s, path: %s, newdir: %s\n", pathname, path, newdir);
+
+
+    // error checking
+    parent_ino = getino(device, path);
+    if(parent_ino < 0) {
+
+        printf("ERROR: File does not exist\n");
+        
+        return -1;
+
+    }
+
+    parent_mip = iget(device, parent_ino);
+
+    if(!S_ISDIR(parent_mip->ip.i_mode)) {
+        iput(parent_mip);
+        printf("ERROR: Not a directory\n");
+        
+        return -1;
+    }
+
+
 
     return 0;
 }
@@ -114,18 +136,18 @@ int k_creat(MINODE *pip, char *name){
 
     MINODE *mip = iget(dev, ino);
 
-    mip->INODE.i_mode = 0x81A4; // file type
-    mip->INODE.i_uid = running->uid;
-    mip->INODE.i_gid = running->gid;
-    mip->INODE.i_size = 0;
-    mip->INODE.i_links_count = 1; // link to '.'
-    mip->INODE.i_blocks = BLKSIZE / 512;
-    mip->INODE.i_atime = time(0L);
-    mip->INODE.i_mtime = time(0L);
-    mip->INODE.i_ctime = time(0L);
+    mip->ip.i_mode = 0x81A4; // file type
+    mip->ip.i_uid = running->uid;
+    mip->ip.i_gid = running->gid;
+    mip->ip.i_size = 0;
+    mip->ip.i_links_count = 1; // link to '.'
+    mip->ip.i_blocks = BLKSIZE / 512;
+    mip->ip.i_atime = time(0L);
+    mip->ip.i_mtime = time(0L);
+    mip->ip.i_ctime = time(0L);
 
     for (i = 0; i < 12; i++){
-        mip->INODE.i_block[i] = 0;
+        mip->ip.i_block[i] = 0;
     }
     
     mip->dirty = 1;
@@ -169,7 +191,7 @@ int my_creat(char *pathname){
         strcpy(newfile, pathname);
     }
 
-    if ((mip->INODE.i_mode & 0x4000) != 0x4000)
+    if ((mip->ip.i_mode & 0x4000) != 0x4000)
     {
         printf("ERROR: Not a directory!\n");
         return -1;
