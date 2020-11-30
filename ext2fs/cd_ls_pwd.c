@@ -14,7 +14,7 @@ int chdir(char *pathname){
 }
 
 // list stats of DIR and FILE in dir
-int ls(char *pathname){
+void ls(char *pathname){
     
     int ino, i = 0; 
     MINODE *mip; 
@@ -47,24 +47,29 @@ void showdir(MINODE *mip)
 { 
     char buf[BLKSIZE];
 
-    get_block(dev, mip->INODE.i_block[0], buf);
     int i;
+    int pos;
     DIR *dp = (DIR*)buf;
     char *cp = buf;
- 
-    for(i = 0; i < 12; ++i) // is 12 correct here?  
+    INODE * parent_ip = &mip->ip;
+
+    // direct blocks
+    for(i = 0; i < NUM_DIRECT_BLOCKS; ++i)   
     {
-        if(mip->INODE.i_block[i] == 0)
+
+
+        if(parent_ip->i_block[i] == 0) //note, this is always evaluating to true
         {
-            return 0;
+            continue;
         }
+        
+        get_block(dev, parent_ip->i_block[i], buf);
+        DIR *dir = (DIR *)buf;
+        pos = buf;
+        
 
-        char buffer[BLKSIZE];
-        get_block(dev, mip->INODE.i_block[i], buffer);
-        DIR *dir = (DIR *)buffer;
-        int pos = 0;
-
-        while(pos < BLKSIZE)          
+        // traverse directory entries
+        while(pos < buf + BLKSIZE)          
         {
             char dirname[dir->name_len + 1];
             strncpy(dirname, dir->name, dir->name_len);
@@ -72,30 +77,30 @@ void showdir(MINODE *mip)
             MINODE *curmip = iget(mip->dev, dir->inode);
 
             // print type
-            printf((curmip->INODE.i_mode & 0x4000) ? "d" : "");
-            printf((curmip->INODE.i_mode & 0x8000) == 0x8000 ? "-" : "");
-            printf((curmip->INODE.i_mode & 0xA000) == 0xA000 ? "l" : "");
+            printf((curmip->ip.i_mode & 0x4000) ? "d" : "");
+            printf((curmip->ip.i_mode & 0x8000) == 0x8000 ? "-" : "");
+            printf((curmip->ip.i_mode & 0xA000) == 0xA000 ? "l" : "");
         
-            char *badctime = ctime(&curmip->INODE.i_mtime);            
+            char *badctime = ctime(&curmip->ip.i_mtime);            
             badctime[24] = '\0';
 
             // print permissions
-            printf( (curmip->INODE.i_mode & 0x0100) ? "r" : " -");
-            printf( (curmip->INODE.i_mode & 0x0080) ? "w" : "-");
-            printf( (curmip->INODE.i_mode & 0x0040) ? "x" : "-");
-            printf( (curmip->INODE.i_mode & 0x0020) ? "r" : "-");
-            printf( (curmip->INODE.i_mode & 0x0010) ? "w" : "-");
-            printf( (curmip->INODE.i_mode & 0x0008) ? "x" : "-");
-            printf( (curmip->INODE.i_mode & 0x0004) ? "r" : "-");
-            printf( (curmip->INODE.i_mode & 0x0002) ? "w" : "-");
-            printf( (curmip->INODE.i_mode & 0x0001) ? "x" : "-");
+            printf( (curmip->ip.i_mode & 0x0100) ? "r" : " -");
+            printf( (curmip->ip.i_mode & 0x0080) ? "w" : "-");
+            printf( (curmip->ip.i_mode & 0x0040) ? "x" : "-");
+            printf( (curmip->ip.i_mode & 0x0020) ? "r" : "-");
+            printf( (curmip->ip.i_mode & 0x0010) ? "w" : "-");
+            printf( (curmip->ip.i_mode & 0x0008) ? "x" : "-");
+            printf( (curmip->ip.i_mode & 0x0004) ? "r" : "-");
+            printf( (curmip->ip.i_mode & 0x0002) ? "w" : "-");
+            printf( (curmip->ip.i_mode & 0x0001) ? "x" : "-");
         
-            printf("\t%d\t%d\t%d\t%s\t%d\t%s", curmip->INODE.i_links_count, curmip->INODE.i_gid, curmip->INODE.i_uid, badctime, curmip->INODE.i_size, dirname);
-            if (S_ISLNK(curmip->INODE.i_mode))
-                printf(" -> %s\n", (char *) curmip->INODE.i_block);
-            
-            else
+            printf("\t%d\t%d\t%d\t%s\t%d\t%s", curmip->ip.i_links_count, curmip->ip.i_gid, curmip->ip.i_uid, badctime, curmip->ip.i_size, dirname);
+            if (S_ISLNK(curmip->ip.i_mode)) {
+                printf(" -> %s\n", (char *) curmip->ip.i_block);
+            } else {
                 printf("\n");
+            }
 
             iput(curmip);
             char *loc = (char *)dir;
@@ -105,7 +110,6 @@ void showdir(MINODE *mip)
         }
     }
 
-    return 0;
 }
 
 // recursive print working directory
@@ -124,7 +128,7 @@ int pwd(MINODE *wd, int childIno){
     DIR *dir;
     MINODE *parent;
     char buf[BLKSIZE], *cp, name[64];
-    get_block(fd, wd->INODE.i_block[0], (char *)&buf);
+    get_block(fd, wd->ip.i_block[0], (char *)&buf);
 
     dir = (DIR *)buf;
     cp = buf + dir->rec_len;
