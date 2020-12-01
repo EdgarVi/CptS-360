@@ -539,16 +539,16 @@ int bdalloc(int device, int bno){
     int i;
     char buf[BLKSIZE];
 
-    if(bno > nblocks){
-        printf("inumber %d out of range\n", bno);
-        return;
+    if(bno <= 0) {
+        printf("Error: block number invalid\n");
+        return -1;
     }
 
     get_block(device, bmap, buf);  //get INODE bitmap block
-    clr_bit(buf, bno-1);         //clear bit
+    clr_bit(buf, bno - 1);         //clear bit
 
-    put_block(device, bmap, buf);     //write INODE back
     dec_inc_free_blocks(device, '+');  //increment free BLOCKS
+    put_block(device, bmap, buf);     //write INODE back
 }
 
 int child_count(MINODE *pmip){
@@ -610,6 +610,89 @@ int my_pfd() {
     }
     return 1;
 }
+
+
+// clear blocks
+int clear_blocks(MINODE *mip)
+{	
+	int device = mip->dev;
+	int *indirect_block, *double_indirect_block;
+	char indirect_buf[BLKSIZE], double_indirect_buf[BLKSIZE];
+	int indirect_sentinel, double_indirect_sentinel, total = 0;
+
+
+	//direct blocks
+	for(indirect_sentinel = 0; indirect_sentinel < NUM_DIRECT_BLOCKS; indirect_sentinel++)
+	{
+		if(mip->ip.i_block[indirect_sentinel] == 0)
+		{
+			continue;
+		}
+		bdalloc(device, mip->ip.i_block[indirect_sentinel]);
+		mip->ip.i_block[indirect_sentinel] = 0;
+	}
+
+	//indirect blocks
+	if(mip->ip.i_block[NUM_INDIRECT_BLOCKS] != 0)
+	{
+		get_block(device, mip->ip.i_block[NUM_INDIRECT_BLOCKS], indirect_buf);
+		indirect_block = (int *)indirect_buf;
+	
+		for(indirect_sentinel = 0; indirect_sentinel < BLOCK_NUMBERS_PER_BLOCK; indirect_sentinel++)
+		{
+			if(indirect_block[indirect_sentinel] == 0)
+			{
+				continue;
+			}
+			bdalloc(device, indirect_block[indirect_sentinel]);
+		}
+		bdalloc(device, mip->ip.i_block[NUM_INDIRECT_BLOCKS]);
+ 		mip->ip.i_block[NUM_INDIRECT_BLOCKS] = 0;
+	}
+
+	memset(indirect_buf, 0, BLKSIZE);
+	memset(double_indirect_buf, 0, BLKSIZE);
+	
+	//doubly indirect blocks 
+	if(mip->ip.i_block[NUM_DOUBLE_INDIRECT_BLOCKS] != 0)
+	{
+		get_block(device, mip->ip.i_block[NUM_DOUBLE_INDIRECT_BLOCKS], double_indirect_buf);
+		double_indirect_block = (int *)double_indirect_buf;
+
+		for(indirect_sentinel = 0; indirect_sentinel < BLOCK_NUMBERS_PER_BLOCK; indirect_sentinel++)
+		{
+			if(double_indirect_block[indirect_sentinel] == 0)
+			{
+				continue;
+			}
+			
+			get_block(device, double_indirect_block[indirect_sentinel], indirect_buf);
+			indirect_block = (int *)indirect_buf;
+
+			for(double_indirect_sentinel = 0; double_indirect_sentinel < BLOCK_NUMBERS_PER_BLOCK; double_indirect_sentinel++)
+			{
+				if(indirect_block[double_indirect_sentinel] == 0)
+				{
+					continue;
+				}
+				bdalloc(device, indirect_block[double_indirect_sentinel]);
+			}
+
+			memset(indirect_buf, 0, BLKSIZE);
+
+		}
+		bdalloc(device, mip->ip.i_block[NUM_DOUBLE_INDIRECT_BLOCKS]);
+		mip->ip.i_block[NUM_DOUBLE_INDIRECT_BLOCKS] = 0;
+	}
+
+	mip->dirty = 1;
+	mip->ip.i_size = 0;
+	mip->ip.i_ctime = mip->ip.i_mtime = time(0L);  
+	mip->ip.i_blocks = 0;
+
+	return 0;
+}
+
 
 int assign_first_empty_bno(MINODE *mip, int bno)
 {
