@@ -1,4 +1,4 @@
-#include "link_unlink.c"
+#include "symlink.c"
 
 char * rootdev = "mydisk"; // default root device if none given
 
@@ -151,6 +151,12 @@ int main(int argc, char * argv[]) {
             char *file1 = strtok(pathname, "&");
             char *file2 = strtok(NULL, "\n");
             my_unlink(file1, file2);
+        }
+
+        if(!strcmp(command, "symlink")) {
+            char *file1 = strtok(pathname, "&");
+            char *file2 = strtok(NULL, "\n");
+            my_symlink(file1, file2);
         }
     }
 
