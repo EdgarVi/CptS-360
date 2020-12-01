@@ -53,13 +53,13 @@ int my_open(char * path, char * mode_input) {
     OFT *oftp;
 
     // set mode type
-    if(strcmp(mode_input, "R") == 0)
+    if(!strcmp(mode_input, "R"))
         mode = READ_TYPE;
-    if(strcmp(mode_input, "W") == 0)
+    if(!strcmp(mode_input, "W"))
         mode = WRITE_TYPE;
-    if(strcmp(mode_input, "RW") == 0)
+    if(!strcmp(mode_input, "RW"))
         mode = READ_WRITE_TYPE;
-    if(strcmp(mode_input, "APPEND") == 0)
+    if(!strcmp(mode_input, "APPEND"))
         mode = APPEND_TYPE;
 
     i_number = getino(device, path);
