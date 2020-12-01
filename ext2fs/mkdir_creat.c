@@ -116,86 +116,80 @@ int my_mkdir(char *pathname)
     return 0;
 }
 
-int k_creat(MINODE *pip, char *name){
+int k_creat(MINODE *parent_mip, char *name){
     
-    int i, ino = ialloc(dev);
+    int inode_number, blk_number, device = parent_mip->dev, i;
+    char buf[BLKSIZE], *current;
+    MINODE *mip;
+    INODE *ip;
+    DIR *dp;
 
-    if(ino == 0){
-        printf("ERROR: Unable to allocate inode\n");
+    inode_number = ialloc(device);
+    mip = iget(device, inode_number);
+
+    if(inode_number < 0){
+        printf("Error: Unable to allocate inode\n");
         return -1;
     }
 
-    dev = pip->dev;
+    ip = &mip->ip;
 
-    MINODE *mip = iget(dev, ino);
+    ip->i_mode = 0100664;
+    ip->i_uid = running->uid;
+    ip->i_gid = running->gid;
+    ip->i_size = 0;
+    ip->i_links_count = 1;
+    ip->i_atime = ip->i_ctime = ip->i_mtime = time(0L);
+    ip->i_blocks = 0;
 
-    mip->ip.i_mode = 0x81A4; // file type
-    mip->ip.i_uid = running->uid;
-    mip->ip.i_gid = running->gid;
-    mip->ip.i_size = 0;
-    mip->ip.i_links_count = 1; // link to '.'
-    mip->ip.i_blocks = BLKSIZE / 512;
-    mip->ip.i_atime = time(0L);
-    mip->ip.i_mtime = time(0L);
-    mip->ip.i_ctime = time(0L);
 
-    for (i = 0; i < 12; i++){
-        mip->ip.i_block[i] = 0;
+    for(i = 0; i < I_BLOCKS; i++){
+        ip->i_block[i] = 0;
     }
-    
+
     mip->dirty = 1;
-    iput(mip); // write back to disk
-
-    enter_name(pip, ino, name);
-
-    return 1; 
+    iput(mip);
+    
+    enter_name(parent_mip, inode_number, name);
+    return inode_number;
+     
 }
 
 int my_creat(char *pathname){
 
-    int ino, pino, i;
-    char *path, *newfile, *temp;
+    int ino, pino, i, device = running->cwd->dev;
+    char * child, * parent;
+    MINODE * mip, * parent_mip;
 
     // check if path exists and is actually dir
     if(pathname[0] == '/'){
-        dev = root->dev; //
+        mip = root;
     } else {
-        dev = running->cwd->dev;
-    }
-    MINODE *pmip, *mip;
-    pino = getino(dev, pathname);
-    pmip = iget(dev, pino);
-
-    if(findPath(path)){
-        path = dirname(pathname); // path to new file
-        newfile = basename(pathname); // name of new file
-
-        pino = getino(&dev, path);
-
-        if(pino == 0){
-            printf("ERROR: Path does not exist");
-            return -1;
-        }
-
-        mip = iget(dev, pino);
-    } else {
-        mip = iget(running->cwd->dev, running->cwd->ino);
-        newfile = (char *) malloc((strlen(pathname) + 1) * sizeof(char));
-        strcpy(newfile, pathname);
+        mip = running->cwd;
     }
 
-    if ((mip->ip.i_mode & 0x4000) != 0x4000)
-    {
-        printf("ERROR: Not a directory!\n");
+    child = basename(pathname);
+    parent = dirname(pathname);
+
+    pino = getino(device, parent); // get inode number of parent directory
+    
+    if(pino < 0) {
+        printf("Error: File does not exist\n");
         return -1;
     }
 
-    if (search(mip, newfile) != 0)
-    {
-        printf("ERROR: File already exists!\n");
+    parent_mip = iget(device, pino);
+
+    if(!S_ISDIR(parent_mip->ip.i_mode)) {
+        iput(parent_mip);
+        printf("Error: not a dir\n");
         return -1;
     }
-    printf("passed all checks\n");
 
-    k_creat(mip, newfile);
+    k_creat(mip, child);
+
+    parent_mip->ip.i_atime = time(0L);
+    parent_mip->dirty = 1;
+
+    iput(parent_mip); // write parent back to disk
 }
