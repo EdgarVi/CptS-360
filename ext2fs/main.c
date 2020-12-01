@@ -1,4 +1,4 @@
-#include "mkdir_creat.c"
+#include "rmdir.c"
 
 char * rootdev = "mydisk"; // default root device if none given
 
