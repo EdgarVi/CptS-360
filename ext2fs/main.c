@@ -146,6 +146,12 @@ int main(int argc, char * argv[]) {
             char *file2 = strtok(NULL, "\n");
             my_link(file1, file2);
         }
+
+        if(!strcmp(command, "unlink")) {
+            char *file1 = strtok(pathname, "&");
+            char *file2 = strtok(NULL, "\n");
+            my_unlink(file1, file2);
+        }
     }
 
     return 0;
