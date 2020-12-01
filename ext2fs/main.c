@@ -149,6 +149,9 @@ int main(int argc, char * argv[]) {
 
         if(!strcmp(command, "symlink"))
             my_symlink(pathname, newpath);
+
+        if(!strcmp(command, "open"))
+            my_open(pathname, newpath);
         
     }
 
