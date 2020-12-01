@@ -59,13 +59,15 @@ void ls(char *pathname){
 
 void showdir(MINODE *mip)
 { 
-    char buf[BLKSIZE];
+    char buf[BLKSIZE], buf_index[BLKSIZE], buf_double[BLKSIZE], * current, name[256];
 
     int i;
     int pos;
     DIR *dp = (DIR*)buf;
     char *cp = buf;
     INODE * parent_ip = &mip->ip;
+    int indirect_index, double_indirect_index;
+    int * indirect, * double_indirect;
 
     // direct blocks
     for(i = 0; i < NUM_DIRECT_BLOCKS; ++i)   
@@ -123,6 +125,91 @@ void showdir(MINODE *mip)
             dir = (DIR *)loc;
         }
     }
+
+    //indirect blocks
+	if(parent_ip->i_block[NUM_INDIRECT_BLOCKS])
+	{
+		get_block(dev, parent_ip->i_block[NUM_INDIRECT_BLOCKS], buf_index);
+		indirect = (int *)buf_index;
+
+		for(indirect_index = 0; indirect_index < BLOCK_NUMBERS_PER_BLOCK; indirect_index++)
+		{
+			if(indirect[i] == 0)
+			{
+				continue;
+			}
+
+			get_block(dev, indirect[i], buf);
+
+	        current = buf;
+	        dp = (DIR*)buf;
+
+	        while(current < buf + block_size)
+	        {
+	        	//dont print '.' and '..' entries
+	        	if(((strncmp(dp->name, ".", dp->name_len)) != 0) && 
+	        		((strncmp(dp->name, "..", dp->name_len)) != 0))
+	        	{
+	        		strncpy(name, dp->name, dp->name_len);
+	        		name[dp->name_len] = 0;
+
+	        		dir_entry_mip = get_minode(dev, dp->inode);
+	        		ls_file(dir_entry_mip, name);
+	        		
+	        		put_minode(dir_entry_mip);
+	        	}        	   
+	        	current += dp->rec_len;
+	        	dp = (DIR*)current;
+			}
+		}
+	}
+	//double indirect blocks
+	if(parent_ip->i_block[NUM_DOUBLE_INDIRECT_BLOCKS])
+	{
+		get_block(dev, parent_ip->i_block[NUM_DOUBLE_INDIRECT_BLOCKS], buf_double);
+		double_indirect = (int *)buf_double;
+
+		for(double_indirect_index = 0; double_indirect_index < BLOCK_NUMBERS_PER_BLOCK; double_indirect_index++)
+		{
+			if(double_indirect[double_indirect_index] == 0)
+			{
+				continue;
+			}
+
+			get_block(dev, double_indirect[double_indirect_index], buf_index);
+			indirect = (int *)buf_index;
+
+			for(indirect_index = 0; indirect_index < BLOCK_NUMBERS_PER_BLOCK; indirect_index++)
+			{
+				if(indirect[i] == 0)
+				{
+					continue;
+				}
+				get_block(dev, indirect[i], buf);
+
+				current = buf;
+		        dp = (DIR*)buf;
+
+		        while(current < buf + block_size)
+		        {
+		        	//dont print '.' and '..' entries
+		        	if(((strncmp(dp->name, ".", dp->name_len)) != 0) && 
+		        		((strncmp(dp->name, "..", dp->name_len)) != 0))
+		        	{
+		        		strncpy(name, dp->name, dp->name_len);
+		        		name[dp->name_len] = 0;
+
+		        		dir_entry_mip = iget(dev, dp->inode);
+		        		ls(name);
+		        		
+		        		iput(dir_entry_mip);
+		        	}        	   
+		        	current += dp->rec_len;
+		        	dp = (DIR*)current;
+				}
+			}
+		}
+	}
 
 }
 
