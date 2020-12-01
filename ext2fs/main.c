@@ -1,4 +1,4 @@
-#include "symlink.c"
+#include "open_close_lseek.c"
 
 char * rootdev = "mydisk"; // default root device if none given
 

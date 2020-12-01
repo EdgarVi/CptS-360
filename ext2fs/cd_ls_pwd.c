@@ -116,6 +116,7 @@ void showdir(MINODE *mip)
     DIR *dp = (DIR*)buf;
     char *cp = buf;
     INODE * parent_ip = &mip->ip;
+    MINODE * dir_entry_mip;
     int indirect_index, double_indirect_index;
     int * indirect, * double_indirect;
 
@@ -203,10 +204,10 @@ void showdir(MINODE *mip)
 	        		strncpy(name, dp->name, dp->name_len);
 	        		name[dp->name_len] = 0;
 
-	        		dir_entry_mip = get_minode(dev, dp->inode);
+	        		dir_entry_mip = iget(dev, dp->inode);
 	        		ls_file(dir_entry_mip, name);
 	        		
-	        		put_minode(dir_entry_mip);
+	        		iput(dir_entry_mip);
 	        	}        	   
 	        	current += dp->rec_len;
 	        	dp = (DIR*)current;
