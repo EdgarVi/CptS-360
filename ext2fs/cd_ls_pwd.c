@@ -26,8 +26,58 @@ int chdir(char *pathname){
     return 0;
 }
 
+// lists metadata of a single file
+void ls_file(MINODE * mip, char *name) {
+
+    int mode, links, uid, gid, size;
+    char * time;
+    static const char * permissions = "rwxrwxrwx";
+    INODE * ip = &mip->ip;
+
+    mode = ip->i_mode;
+    links = ip->i_links_count;
+    uid = ip->i_uid;
+    gid = ip->i_gid;
+    size = ip->i_size;
+
+    // get timestamps
+    time = ctime((time_t*)&ip->i_mtime);
+    time[strlen(time) - 1] = 0;
+
+    switch(mode & 0xF000) //filetypes (directory, link, etc)
+    {
+        case 0x8000:  
+            putchar('-');     
+            break; // 0x8 = 1000
+        case 0x4000:  
+            putchar('d');     
+            break; // 0x4 = 0100
+        case 0xA000:  
+            putchar('l');     
+            break; // oxA = 1010
+        default:      
+            putchar('?');     
+            break;
+    }
+
+	//print permissions
+    for(int i = 0; i < strlen(permissions); i++)
+    {
+        putchar(mode & (1 << (strlen(permissions) - 1 - i)) ? permissions[i] : '-');
+    }
+	//print rest of metadata
+    printf("%d %d %d %d %26s %s", links, gid, uid, size, time, name);
+
+	//if a link, print what link points to
+    if(S_ISLNK(ip->i_mode))
+    {
+        printf(" -> %s", (char*)ip->i_block);
+    }
+
+    printf("\n");
+}
+
 // list stats of DIR and FILE in dir
-// currently works for only 
 void ls(char *pathname){
     
     int ino, i = 0; 
@@ -200,7 +250,7 @@ void showdir(MINODE *mip)
 		        		name[dp->name_len] = 0;
 
 		        		dir_entry_mip = iget(dev, dp->inode);
-		        		ls(name);
+		        		ls_file(dir_entry_mip, name); // ls file
 		        		
 		        		iput(dir_entry_mip);
 		        	}        	   
