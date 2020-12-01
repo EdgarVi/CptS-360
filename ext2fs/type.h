@@ -17,6 +17,7 @@
 #define NUM_INDIRECT_BLOCKS 12
 #define NUM_DOUBLE_INDIRECT_BLOCKS 13
 #define I_BLOCKS 15
+#define BLOCK_NUMBERS_PER_BLOCK 256
 
 // Block number of EXT2 FS on FD
 #define SUPERBLOCK 1
