@@ -75,6 +75,13 @@ typedef struct oft {
 } OFT;
 
 
+// MODE Types
+#define READ_TYPE 0
+#define WRITE_TYPE 1
+#define READ_WRITE_TYPE 2
+#define APPEND_TYPE 3
+
+
 // PROC structure
 typedef struct proc {
     struct Proc * next;
