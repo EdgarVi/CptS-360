@@ -98,6 +98,7 @@ int dec_inc_free_blocks(int dev, char action){
 
 }
 
+// allocate inode
 int ialloc(int dev){
     int i;
     char buf[BLKSIZE];
@@ -115,7 +116,17 @@ int ialloc(int dev){
     return 0;
 }
 
+void clear_block(int dev, int block)
+{
+	char buf[BLKSIZE];
+	get_block(dev, block, buf);
+	memset(buf, 0, BLKSIZE);
+	put_block(dev, block, buf);
+}
+
 // allocate new data block
+// loads block bitmap, tests each bit in order and
+// returns index of first unallocated block
 int balloc(dev){
 
     int i;
@@ -124,13 +135,19 @@ int balloc(dev){
     get_block(dev, bmap, buf); // read bmap block
 
     for(i = 0; i < nblocks; i++){
+        
         if(test_bit(buf, i) == 0){
+            
             set_bit(buf, i);
-            put_block(dev, bmap, buf);
             dec_inc_free_blocks(dev, '-'); // decrement free blocks
-            return i + 1;
+            put_block(dev, bmap, buf);
+            clear_block(dev, i + 1);
+            return i + 1; // return index of this block
         }
     }
+
+    printf("ERROR: No free blocks left\n");
+    return -1;
 }
 
 
