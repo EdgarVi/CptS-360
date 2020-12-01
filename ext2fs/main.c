@@ -107,7 +107,7 @@ int main(int argc, char * argv[]) {
     dev = fd;
 
     mount_root(dev);
-
+    printf("mounted %s\n", rootdev);
 
     // ask for command line args
     while(1) {
@@ -140,6 +140,12 @@ int main(int argc, char * argv[]) {
 
         if(!strcmp(command, "rmdir"))
             my_rmdir(pathname);
+
+        if(!strcmp(command, "link")) {
+            char *file1 = strtok(pathname, "&");
+            char *file2 = strtok(NULL, "\n");
+            my_link(file1, file2);
+        }
     }
 
     return 0;
