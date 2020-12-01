@@ -48,7 +48,7 @@ int open_file(MINODE * mip, int mode){
 }
 
 int my_open(char * path, char * mode_input) {
-    int mode, device, i_number, device = running->cwd->dev, i, fd;
+    int mode, i_number, device = running->cwd->dev, i, fd;
     MINODE * mip;
     OFT *oftp;
 
