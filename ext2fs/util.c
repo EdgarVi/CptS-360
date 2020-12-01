@@ -850,6 +850,48 @@ int enter_name(MINODE *parent_mip, int ino, char *name){
 	return 0;
 }
 
+// Shows if duplicate oft exists
+int duplicate_oft(MINODE *mip)
+{
+	int i;
+	OFT *oftp;
+
+	for(int i = 0; i < NOFT; i++)
+	{
+		oftp = &oft[i];
+
+
+		if(oftp->refCount > 0)
+		{
+			if(oftp->minodePtr->dev == mip->dev && 
+				oftp->minodePtr->ino == mip->ino)
+			{
+				if(oftp->mode != READ_TYPE)
+				{
+					return 1;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+// get open file table
+OFT * get_oft() {
+    int i;
+    OFT *oftp;
+
+    for(i = 0; i < NOFT; i++){
+        oftp = &oft[i];
+        if(oftp->refCount == 0){
+            oftp->refCount++;
+            return oftp;
+        }
+    }
+
+    printf("Error: No open file tables left\n");
+    return NULL;
+}
 
 
 // write all modified minodes to disk
