@@ -141,23 +141,15 @@ int main(int argc, char * argv[]) {
         if(!strcmp(command, "rmdir"))
             my_rmdir(pathname);
 
-        if(!strcmp(command, "link")) {
-            char *file1 = strtok(pathname, "&");
-            char *file2 = strtok(NULL, "\n");
-            my_link(file1, file2);
-        }
+        if(!strcmp(command, "link")) 
+            my_link(pathname, newpath);
 
-        if(!strcmp(command, "unlink")) {
-            char *file1 = strtok(pathname, "&");
-            char *file2 = strtok(NULL, "\n");
-            my_unlink(file1, file2);
-        }
+        if(!strcmp(command, "unlink")) 
+            my_unlink(pathname, newpath);
 
-        if(!strcmp(command, "symlink")) {
-            char *file1 = strtok(pathname, "&");
-            char *file2 = strtok(NULL, "\n");
-            my_symlink(file1, file2);
-        }
+        if(!strcmp(command, "symlink"))
+            my_symlink(pathname, newpath);
+        
     }
 
     return 0;
