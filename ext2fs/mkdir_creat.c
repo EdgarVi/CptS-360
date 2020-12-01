@@ -1,89 +1,224 @@
 #include "cd_ls_pwd.c"
 
+
+int assign_first_empty_bno(MINODE *mip, int bno)
+{
+
+	int i, ind_index, double_index;
+	int *indirect, *double_indirect;
+	INODE *parent_ip = &mip->ip;
+	int block_number;
+	int device = mip->dev;
+	char *current_ptr, buf[BLKSIZE], buf_ind[BLKSIZE], buf_double[BLKSIZE];
+
+	//direct blocks
+	for(i = 0; i < NUM_DIRECT_BLOCKS; i++)
+	{
+		if(parent_ip->i_block[i] == 0)
+		{
+			parent_ip->i_block[i] = bno;
+			return 0;
+		}
+	}
+
+	//indirect blocks
+	if(parent_ip->i_block[NUM_INDIRECT_BLOCKS] == 0)
+	{
+		parent_ip->i_block[NUM_INDIRECT_BLOCKS] = balloc(mip->dev);
+		mip->dirty = 1;
+	}
+	get_block(device, parent_ip->i_block[NUM_INDIRECT_BLOCKS], buf_ind);
+	indirect = (int *)buf_ind;
+
+	for(ind_index = 0; ind_index < BLOCK_NUMBERS_PER_BLOCK; ind_index++)
+	{
+		if(indirect[i] == 0)
+		{
+			indirect[i] = bno;
+			put_block(device, parent_ip->i_block[NUM_INDIRECT_BLOCKS], buf_ind);
+			return 0;
+		}
+	}
+	
+	//double indirect blocks
+	if(parent_ip->i_block[NUM_DOUBLE_INDIRECT_BLOCKS] == 0)
+	{
+		parent_ip->i_block[NUM_DOUBLE_INDIRECT_BLOCKS] = balloc(mip->dev);
+		mip->dirty = 1;
+	}
+
+	get_block(device, parent_ip->i_block[NUM_DOUBLE_INDIRECT_BLOCKS], buf_double);
+	double_indirect = (int *)buf_double;
+
+	for(double_index = 0; double_index < BLOCK_NUMBERS_PER_BLOCK; double_index++)
+	{
+		if(double_indirect[double_index] == 0)
+		{
+			double_indirect[double_index] = balloc(mip->dev);
+			put_block(device, parent_ip->i_block[NUM_DOUBLE_INDIRECT_BLOCKS], buf_double);
+			return 0;
+		}
+
+		get_block(device, double_indirect[double_index], buf_ind);
+		indirect = (int *)buf_ind;
+
+		for(ind_index = 0; ind_index < BLOCK_NUMBERS_PER_BLOCK; ind_index++)
+		{
+			if(indirect[i] == 0)
+			{
+				indirect[i] = bno;
+				put_block(device, double_indirect[double_index], buf_ind);
+				return 0;
+			}
+		}
+	}
+
+	printf("ERROR: No blocks left\n");
+	return -1;
+}
+
 // enters a [ino, name] tuple as a new dir entry into a parent dir
-int enter_name(MINODE *mip, int ino, char *name){
+int enter_name(MINODE *parent_mip, int ino, char *name){
     
-    printf("In enter_name()\n\tino: %d, name: %s\n", ino, name);
 
 
-    int i, ideal_length, need_length, remain;
-    char *cp, sbuf[BLKSIZE], temp[256];
-    INODE *ip = &mip->ip;
+    int i, ind_index, double_index, block_number, device = parent_mip->dev;
+	int need_length, remaining_length, ideal_last_entry;
+	int *indirect, *double_indirect;
+	char buf[BLKSIZE], buf_ind[BLKSIZE], buf_double[BLKSIZE], *current;
+	DIR *dp;
+	INODE *parent_ip = &parent_mip->ip;
 
-    need_length = 4*((8 + strlen(name) + 3)/4);  //rec_len needed for the new DIR entry
+	//direct blocks
+	for(i = 0; i < NUM_DIRECT_BLOCKS; i++)
+	{
+		if(parent_ip->i_block[i] == 0)
+		{
+			continue;
+		}
 
-    // traverse blocks in INODE
-    for(i = 0; i < 12;i++){
-        if(ip->i_block[i] == 0){
-            break;
-        }
+		block_number = parent_ip->i_block[i];
 
-        // get pmip's data block into sbuf
-        get_block(mip->dev,ip->i_block[i],sbuf);
+		get_block(device, block_number, buf);
 
-        dp = (DIR *)sbuf; 
-        cp = sbuf;
+		current = buf;
+		dp = (DIR*)buf;
 
-        // step to last entry in the data block
-        while(cp + dp->rec_len < sbuf + BLKSIZE)
-        {
-            // rec_len (except for last direntry)
-            ideal_length = 4*((8 + dp->name_len + 3)/4);  
+		while(current + dp->rec_len < buf + block_size)
+		{
+			current += dp->rec_len;
+			dp = (DIR *)current;
+		}
 
-            cp += dp->rec_len;  // advance char_p by rec_len
-            dp = (DIR *)cp;     // pull dir_p to next entry
-        }
+		need_length = (4 * (( 8 + strlen(name) + 3) / 4));
+		ideal_last_entry = (4 * (( 8 + dp->name_len + 3) / 4));
+		remaining_length = dp->rec_len - ideal_last_entry;
 
-        // remaining space in Data Block after last entry
-        remain = dp->rec_len - ideal_length; 
+		if(remaining_length >= need_length)
+		{
+			dp->rec_len = ideal_last_entry;
 
-        if(remain >= need_length) {
-            // set Last entry rec_len to its ideal length
-            dp->rec_len = ideal_length; 
+			current += dp->rec_len;
+			dp = (DIR*)current;
 
-            cp += dp->rec_len;   // advance cp & pull new dir entry
-            dp = (DIR *)cp;
+			dp->inode = ino;
+			dp->rec_len = (block_size - (current - buf));
+			dp->name_len = strlen(name);
+			dp->file_type = EXT2_FT_DIR;
+			strcpy(dp->name, name);
 
-            // dp points to a new empty dir entry 
-            // where we will enter the new DIR
-            dp->rec_len = remain;
-            dp->name_len = strlen(name);
-            dp->inode = ino;
-            strcpy(dp->name,name);
-            
-            // write the block back to the disk
-            put_block(mip->dev,ip->i_block[i],sbuf);
-            iput(mip);
+			put_block(device, block_number, buf);
+			
+			return 0;
+		}
+	}
 
-            return;
-        } else {
-            i++;
 
-            // get pmip's new data block into sbuf
-            get_block(mip->dev,ip->i_block[i],sbuf);
+    block_number = balloc(device);
 
-            dp = (DIR *)sbuf;
+	assign_first_empty_bno(parent_mip, block_number);
+	parent_ip->i_size += block_size;
+	parent_ip->i_blocks += block_size / 512;
+	parent_mip->dirty = 1;
 
-            mip->ip.i_size += BLKSIZE;  // increment parent size by 1024  
-            
-            // dp points to a new empty data block  
-            dp->rec_len = BLKSIZE;
-            dp->name_len = strlen(name);
-            dp->inode = ino;
-            strcpy(dp->name,name);
+	get_block(device, block_number, buf);
 
-            //write the block back to the disk
-            put_block(mip->dev,ip->i_block[i],sbuf);
-            iput(mip);
+	current = buf;
+	dp = (DIR *)buf;
 
-            return 1;
-        }
-    }
+	dp->inode = ino;
+	dp->rec_len = block_size;
+	dp->name_len = strlen(name);
+	dp->file_type = EXT2_FT_DIR;
+	strcpy(dp->name, name);
+
+	put_block(device, block_number, buf);
+
+	return 0;
 }
 
 int k_mkdir(MINODE *parent_mip, char *name)
 {
-    
+
+    int inode_number, block_number, device = parent_mip->dev, i;
+    char buf[BLKSIZE], *current;
+    MINODE *mip;
+    DIR *dp;
+
+    inode_number = ialloc(device); // get index of next free inode
+    block_number = balloc(device); // get index of next free block
+
+    mip = iget(device, inode_number);
+
+    // set metadata
+    mip->ip.i_mode = DIR_MODE; // DIR type
+    mip->ip.i_uid = running->uid;
+    mip->ip.i_gid = running->gid;
+    mip->ip.i_size = BLKSIZE;
+    mip->ip.i_links_count = 2; // link to '.' and '..'
+    mip->ip.i_blocks = 2;
+    mip->ip.i_atime = time(0L);
+    mip->ip.i_mtime = time(0L);
+    mip->ip.i_ctime = time(0L);
+    mip->ip.i_block[0] = block_number;
+
+    // set new block indices to free
+    for(i = 1; i < I_BLOCKS; i++){
+        mip->ip.i_block[i] = 0;
+    }
+
+    mip->dirty = 1;
+
+    iput(mip);
+    get_block(device, block_number, buf);
+
+    // set data for new dir
+    current = buf;
+    dp = (DIR *)buf;
+
+
+    dp->inode = inode_number;
+	dp->rec_len = 4 * (( 8 + strlen(".") + 3) / 4);
+	dp->name_len = strlen(".");
+	dp->file_type = EXT2_FT_DIR;
+	dp->name[0] = '.';
+
+	current += dp->rec_len;
+	dp = (DIR*)current;
+
+	dp->inode = parent_mip->ino;
+	dp->rec_len = (block_size - (current - buf));
+
+	dp->name_len = strlen("..");
+	dp->file_type = EXT2_FT_DIR;
+	dp->name[0] = '.';
+	dp->name[1] = '.';
+
+	put_block(device, block_number, buf); // write buf data to this block number
+
+	enter_name(parent_mip, inode_number, name); // enter new dir entry of its parent
+
+    return 0;
 }
 
 int my_mkdir(char *pathname)
@@ -118,7 +253,20 @@ int my_mkdir(char *pathname)
         return -1;
     }
 
+    if(getino(dev, pathname) > 0) {
 
+        iput(parent_mip);
+        printf("ERROR: File already exists\n");
+        return -1;
+    };
+
+    k_mkdir(parent_mip, newdir); // creates new dir
+
+    parent_mip->ip.i_links_count++;
+    parent_mip->ip.i_atime = time(0L); // grab current timestamp
+    parent_mip->dirty = 1;
+
+    iput(parent_mip);
 
     return 0;
 }
