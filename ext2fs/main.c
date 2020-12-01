@@ -137,6 +137,9 @@ int main(int argc, char * argv[]) {
 
         if(!strcmp(command, "creat"))
             my_creat(pathname);
+
+        if(!strcmp(command, "rmdir"))
+            my_rmdir(pathname);
     }
 
     return 0;

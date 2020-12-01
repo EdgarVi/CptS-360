@@ -161,7 +161,7 @@ int k_rmdir(MINODE *parent_mip, char * name) {
 	return 0;
 }
 
-int rmdir(char *pathname) {
+int my_rmdir(char *pathname) {
 
     int i = 1, j, ino, device = running->cwd->dev, parent_ino;
     char buf[BLKSIZE], * current, * parent, * child;
