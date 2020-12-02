@@ -151,7 +151,10 @@ int main(int argc, char * argv[]) {
             my_symlink(pathname, newpath);
 
         if(!strcmp(command, "open"))
-            my_open(pathname, newpath);
+            fd = my_open(pathname, newpath);
+
+        if(!strcmp(command, "close"))
+            fd = my_close(pathname); // user must supply fd as a string
         
     }
 

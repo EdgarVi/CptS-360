@@ -1,5 +1,55 @@
 #include "symlink.c"
 
+
+int my_close(char * fd_input) {
+
+    OFT * ofp;
+
+    // convert fd from char to int
+    if(strcmp(fd_input, "0") == 0)
+	{
+		fd = 0;
+
+	} else {
+        fd = atoi(fd_input);
+		if(fd == 0) {
+			printf("Error: Invalid file descriptor\n");
+			return -1;
+		}
+	}
+	
+
+	if(fd < 0 || fd > NOFT)
+	{
+		printf("Error: Invalid file descriptor\n");
+		return -1;
+	}
+
+	if(running->fd[fd] == NULL)
+	{
+		printf("Error: Not open file descriptor\n");
+		return -1;
+	}
+	else if(running->fd[fd]->refCount == 0)
+	{
+		printf("Error: Not open file descriptor\n");
+		return -1;
+	}
+
+	ofp = running->fd[fd];
+	running->fd[fd] = 0;
+
+	ofp->refCount--;
+
+	if(ofp->refCount == 0)
+	{
+		iput(ofp->minodePtr);
+	}
+
+	return 0;
+
+}
+
 int open_file(MINODE * mip, int mode){
 
     OFT *ofp;
@@ -48,7 +98,7 @@ int open_file(MINODE * mip, int mode){
 }
 
 int my_open(char * path, char * mode_input) {
-    int mode, i_number, device = running->cwd->dev, i, fd;
+    int mode, i_number, device = running->cwd->dev, i;
     MINODE * mip;
     OFT *oftp;
 
@@ -79,7 +129,8 @@ int my_open(char * path, char * mode_input) {
 
     // passed checks now open file
     fd = open_file(mip, mode);
-    
+    printf("fd of opened file: %d\n", fd);
+
     return fd;
         
 }
