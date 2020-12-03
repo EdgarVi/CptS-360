@@ -154,7 +154,11 @@ int main(int argc, char * argv[]) {
             fd = my_open(pathname, newpath);
 
         if(!strcmp(command, "close"))
-            fd = my_close(pathname); // user must supply fd as a string
+            fd = my_close(pathname);
+
+        if(!strcmp(command, "cat"))
+            my_cat(pathname);
+        
         
     }
 
