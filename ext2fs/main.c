@@ -1,4 +1,4 @@
-#include "open_close_lseek.c"
+#include "read_cat.c"
 
 char * rootdev = "mydisk"; // default root device if none given
 
