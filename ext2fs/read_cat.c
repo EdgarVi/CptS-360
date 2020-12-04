@@ -110,7 +110,7 @@ int my_cat(char * filename, char * mode_input) {
 	
 	while((n = my_read(fd, buf, BLKSIZE)))
 	{
-		printf("called my_read\n");
+	
 		memcpy(print_buf, buf, BLKSIZE);
 		print_buf[n] = 0;
 
