@@ -157,7 +157,7 @@ int main(int argc, char * argv[]) {
             fd = my_close(pathname);
 
         if(!strcmp(command, "cat"))
-            my_cat(pathname);
+            my_cat(pathname, newpath);
         
         
     }

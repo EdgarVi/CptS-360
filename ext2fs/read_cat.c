@@ -6,8 +6,7 @@
 int my_read(int fd, char * buf, int nbytes) {
     
     int dev, count = 0, remaining, available, logical_block, physical_block, start_byte;
-	int ind_index, double_index;
-	int size;
+	int ind_index, double_index, size;
 	char *src, *dest;
 	int *indirect, *double_indirect;
 	char local_buf[BLKSIZE];
@@ -89,29 +88,29 @@ int my_read(int fd, char * buf, int nbytes) {
 
 
 // Display contents of a file opened for R or RW
-int my_cat(char * filename) {
+int my_cat(char * filename, char * mode_input) {
+	
     char buf[BLKSIZE];
 	char print_buf[BLKSIZE + 1];
-	int n, ino, mode, device = running->cwd->dev;
+	int n, ino, device = running->cwd->dev;
 	OFT *ofp;
 	MINODE *mip;
-
     
 	ino = getino(device, filename);
-
+	
 	if(ino < 0)
 	{
 		printf("Error: File does not exist\n");
 		return -1;
 	}
-
-	mip = iget(running->cwd->dev, ino);
-
-	fd = my_open(mip, mode);
 	
 
+	mip = iget(device, ino);
+	fd = my_open(pathname, mode_input); 
+	
 	while((n = my_read(fd, buf, BLKSIZE)))
 	{
+		printf("called my_read\n");
 		memcpy(print_buf, buf, BLKSIZE);
 		print_buf[n] = 0;
 

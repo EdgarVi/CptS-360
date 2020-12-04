@@ -367,7 +367,7 @@ int getino(int dev, char *pathname){
 
    for(i = 0; i < n; i++){
 
-       printf("name: %s\n", name[i]);
+       printf("Getting i_node number of file named: %s\n", name[i]);
        ino = search(mip, name[i]);
 
        if(ino == 0){
