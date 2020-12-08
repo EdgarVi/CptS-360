@@ -1,5 +1,10 @@
 #include "read_cat.c"
 
+
+int my_write(int dest_fd, char * buf, int num_bytes) {
+    printf("called my write\n");
+}
+
 // implementation of command "cp" to copy contents of one file to another
 int my_cp(char * src_file, char * dest_file) {
 
@@ -9,6 +14,8 @@ int my_cp(char * src_file, char * dest_file) {
 
     MINODE * src_mip, * dest_mip, * parent_mip;
     char *buf[BLKSIZE];
+
+    OFT * ofp;
 
     src_ino = getino(device, src_file);
     if(src_ino < 0) {
@@ -34,5 +41,47 @@ int my_cp(char * src_file, char * dest_file) {
         iput(parent_mip);
 
     }
+
+    src_mip = iget(device, src_ino);
+
+
+	dest_mip = iget(dev, dest_ino);
+
+	src_fd = my_open(src_file, READ_TYPE);
+	dest_fd = my_open(dest_file, WRITE_TYPE);
+
+    // files could not be opened
+	if((src_fd == -1) || (dest_fd == -1)) {
+		iput(src_mip);
+		iput(dest_mip);
+		return -1;
+	}
+
+	while((num_bytes = my_read(src_fd, buf, BLKSIZE)))
+	{
+		my_write(dest_fd, buf, num_bytes);
+	}
+
+	ofp = running->fd[src_fd];
+	running->fd[src_fd] = 0;
+
+	ofp->refCount--;
+	if(ofp->refCount == 0)
+	{
+		ofp->offset = 0;
+		iput(ofp->minodePtr);
+	}
+
+	ofp = running->fd[dest_fd];
+	running->fd[dest_fd] = 0;
+
+	ofp->refCount--;
+	if(ofp->refCount == 0)
+	{
+		ofp->offset = 0;
+		iput(ofp->minodePtr);
+	}
+	
+	return 0;
 
 }
