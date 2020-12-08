@@ -1,4 +1,4 @@
-#include "read_cat.c"
+#include "write_cp.c"
 
 char * rootdev = "mydisk"; // default root device if none given
 
@@ -163,6 +163,8 @@ int main(int argc, char * argv[]) {
         if(!strcmp(command, "cat"))
             my_cat(pathname, newpath);
         
+        if(!strcmp(command, "cp"))
+            my_cp(pathname, newpath);
         
     }
 
