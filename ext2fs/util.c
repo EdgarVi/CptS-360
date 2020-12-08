@@ -15,7 +15,7 @@ int put_block(int dev, int blk, char buf[])
 
     lseek(dev, blk * BLKSIZE, SEEK_SET);
     int n = write(dev, buf, BLKSIZE);
-    printf("reach put block\n");
+    
     if(n != BLKSIZE)
         printf("put_block [%d %d] error\n", dev, blk);
 }
