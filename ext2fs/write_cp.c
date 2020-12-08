@@ -29,10 +29,10 @@ int my_cp(char * src_file, char * dest_file) {
         }
 
         parent_mip = iget(device, parent_ino);
-        dest_ino = my_creat(child);
+        dest_ino = my_creat(child); // finally create file
 
         iput(parent_mip);
-        
+
     }
 
 }
