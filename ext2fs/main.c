@@ -109,6 +109,10 @@ int main(int argc, char * argv[]) {
     mount_root(dev);
     printf("mounted %s\n", rootdev);
 
+    printf("Commands available:\n");
+    printf("LEVEL 1: ls, cd, pwd, mkdir, creat, rmdir, link, unlink, symlink\n");
+    printf("LEVEL 2: open, close, read, cat\n");
+
     // ask for command line args
     while(1) {
         printf("input command: ");
