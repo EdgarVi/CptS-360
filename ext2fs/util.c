@@ -776,7 +776,7 @@ int enter_name(MINODE *parent_mip, int ino, char *name){
 
     int i, ind_index, double_index, block_number, device = parent_mip->dev;
 	int need_length, remaining_length, ideal_last_entry;
-	int *indirect, *double_indirect;
+	
 	char buf[BLKSIZE], *current;
 	DIR *dp;
 	INODE *parent_ip = &parent_mip->ip;
