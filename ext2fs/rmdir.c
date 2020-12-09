@@ -113,7 +113,7 @@ int k_rmdir(MINODE *parent_mip, char * name) {
 
 	if(current_ptr == buf &&
 		current_ptr + dp->rec_len == buf + block_size)
-	{
+	{ // dealing with first entry in block
 		bdalloc(device, parent_mip->ip.i_block[i]);
 
 		parent_mip->ip.i_size -= block_size;

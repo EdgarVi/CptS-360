@@ -777,16 +777,16 @@ int enter_name(MINODE *parent_mip, int ino, char *name){
     int i, ind_index, double_index, block_number, device = parent_mip->dev;
 	int need_length, remaining_length, ideal_last_entry;
 	int *indirect, *double_indirect;
-	char buf[BLKSIZE], buf_ind[BLKSIZE], buf_double[BLKSIZE], *current;
+	char buf[BLKSIZE], *current;
 	DIR *dp;
 	INODE *parent_ip = &parent_mip->ip;
 
-	//direct blocks
-	for(i = 0; i < NUM_DIRECT_BLOCKS; i++)
+	
+	for(i = 0; i < 12; i++)
 	{
 		if(parent_ip->i_block[i] == 0)
 		{
-			continue;
+			continue; // if empty do nothing, else continue and allocate new data block
 		}
 
 		block_number = parent_ip->i_block[i];
@@ -796,9 +796,11 @@ int enter_name(MINODE *parent_mip, int ino, char *name){
 		current = buf;
 		dp = (DIR*)buf;
 
+        printf("in enter_name(), printing dir names\n");
 		while(current + dp->rec_len < buf + block_size)
 		{
 			current += dp->rec_len;
+            printf("\t%s\n", dp->name);
 			dp = (DIR *)current;
 		}
 
@@ -806,6 +808,7 @@ int enter_name(MINODE *parent_mip, int ino, char *name){
 		ideal_last_entry = (4 * (( 8 + dp->name_len + 3) / 4));
 		remaining_length = dp->rec_len - ideal_last_entry;
 
+        // add as last entry in the data block
 		if(remaining_length >= need_length)
 		{
 			dp->rec_len = ideal_last_entry;
@@ -825,9 +828,11 @@ int enter_name(MINODE *parent_mip, int ino, char *name){
 		}
 	}
 
-
+    // reach here means no space in existing data block
+    // enter new entry into new data block
     block_number = balloc(device);
 
+    // create the data block
 	assign_first_empty_bno(parent_mip, block_number);
 	parent_ip->i_size += block_size;
 	parent_ip->i_blocks += block_size / 512;
@@ -838,6 +843,7 @@ int enter_name(MINODE *parent_mip, int ino, char *name){
 	current = buf;
 	dp = (DIR *)buf;
 
+    // set dir metadata
 	dp->inode = ino;
 	dp->rec_len = block_size;
 	dp->name_len = strlen(name);
