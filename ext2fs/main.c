@@ -169,7 +169,7 @@ int main(int argc, char * argv[]) {
         if(!strcmp(command, "mount"))
             my_mount(pathname);
 
-        if(!strcmp(command, my_unmount))
+        if(!strcmp(command, "unmount"))
             my_unmount(pathname);
         
     }
