@@ -51,7 +51,7 @@ int my_close(char * fd_input) {
 }
 
 int open_file(MINODE * mip, int mode){
-
+	printf("made to open_file\n");
     OFT *ofp;
 	int i;
 

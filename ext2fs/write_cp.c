@@ -43,13 +43,11 @@ int my_cp(char * src_file, char * dest_file) {
     }
 
     src_mip = iget(device, src_ino);
-
-
 	dest_mip = iget(dev, dest_ino);
 
-	src_fd = my_open(src_file, READ_TYPE);
-	dest_fd = my_open(dest_file, WRITE_TYPE);
-
+    src_fd = my_open(src_file, "R");
+	dest_fd = my_open(dest_file, "W");
+    
     // files could not be opened
 	if((src_fd == -1) || (dest_fd == -1)) {
 		iput(src_mip);

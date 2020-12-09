@@ -347,7 +347,6 @@ int switch_dev(int disk)
 
 // path to node algorithm
 int getino(int dev, char *pathname){
-    
    int i, ino, block, disp;
    INODE *ip;
    MINODE *mip;
