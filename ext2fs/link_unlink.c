@@ -145,7 +145,6 @@ int my_unlink(char * file1, char * file2) {
         parent_mip = iget(device, parent_ino);
 
         clear_blocks(mip);
-        k_rmdir(parent_mip, child);
         
         iput(parent_mip);
         iput(mip);
