@@ -1,4 +1,4 @@
-#include "write_cp.c"
+#include "mount_umount.c"
 
 char * rootdev = "mydisk"; // default root device if none given
 
@@ -165,6 +165,12 @@ int main(int argc, char * argv[]) {
         
         if(!strcmp(command, "cp"))
             my_cp(pathname, newpath);
+        
+        if(!strcmp(command, "mount"))
+            my_mount(pathname);
+
+        if(!strcmp(command, my_unmount))
+            my_unmount(pathname);
         
     }
 
