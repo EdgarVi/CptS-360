@@ -30,7 +30,7 @@ int my_write(int dest_fd, char * buf, int num_bytes) {
 		{
 			if(ip->i_block[logical_block] == 0)
 			{
-				mip->ip.i_block[logical_block] = allocate_block(mip->dev);
+				mip->ip.i_block[logical_block] = ialloc(mip->dev);
 			}
 			physical_block = ip->i_block[logical_block];
 		}
@@ -48,7 +48,7 @@ int my_write(int dest_fd, char * buf, int num_bytes) {
 
 			if(indirect[logical_block - NUM_DIRECT_BLOCKS] == 0)
 			{
-				indirect[logical_block - NUM_DIRECT_BLOCKS] = allocate_block(mip->dev);
+				indirect[logical_block - NUM_DIRECT_BLOCKS] = ialloc(mip->dev);
 				put_block(mip->dev, ip->i_block[NUM_INDIRECT_BLOCKS], local_buf);
 			}
 
@@ -59,7 +59,7 @@ int my_write(int dest_fd, char * buf, int num_bytes) {
 		{
 			if(ip->i_block[NUM_DOUBLE_INDIRECT_BLOCKS] == 0)
 			{
-				ip->i_block[NUM_DOUBLE_INDIRECT_BLOCKS] = allocate_block(mip->dev);
+				ip->i_block[NUM_DOUBLE_INDIRECT_BLOCKS] = ialloc(mip->dev);
 			}
 			double_index = (logical_block - (NUM_DIRECT_BLOCKS + BLOCK_NUMBERS_PER_BLOCK)) / BLOCK_NUMBERS_PER_BLOCK;
 			ind_index = (logical_block - (NUM_DIRECT_BLOCKS + BLOCK_NUMBERS_PER_BLOCK)) % BLOCK_NUMBERS_PER_BLOCK;
@@ -71,7 +71,7 @@ int my_write(int dest_fd, char * buf, int num_bytes) {
 
 			if(physical_block == 0)
 			{
-				double_indirect[double_index] = allocate_block(mip->dev);
+				double_indirect[double_index] = ialloc(mip->dev);
 				physical_block = double_indirect[double_index];
 				put_block(mip->dev, ip->i_block[NUM_DOUBLE_INDIRECT_BLOCKS], local_buf);
 			}
@@ -85,7 +85,7 @@ int my_write(int dest_fd, char * buf, int num_bytes) {
 
 			if(physical_block == 0)
 			{
-				indirect[ind_index] = allocate_block(mip->dev);
+				indirect[ind_index] = ialloc(mip->dev);
 				physical_block = indirect[ind_index];
 				put_block(mip->dev, double_block, local_buf);
 			}
