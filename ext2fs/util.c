@@ -805,7 +805,7 @@ int enter_name(MINODE *parent_mip, int ino, char *name){
 		}
 
 		need_length = (4 * (( 8 + strlen(name) + 3) / 4));
-		ideal_last_entry = (4 * (( 8 + dp->name_len + 3) / 4));
+		ideal_last_entry = (4 * (( 8 + dp->name_len + 3) / 4)); //ideal for child
 		remaining_length = dp->rec_len - ideal_last_entry;
 
         // add as last entry in the data block
